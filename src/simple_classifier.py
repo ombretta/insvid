@@ -25,6 +25,8 @@ import math
 import argparse
 
 
+# This class generates a torch dataset that can be used to iterate batches 
+# during training and testing
 class NewDataset(torch.utils.data.Dataset):
     
     def __init__(self, X, y, num_classes):
@@ -50,6 +52,7 @@ class NewDataset(torch.utils.data.Dataset):
         return self.data[idx]
 
 
+#cCommand line arguments definition
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -126,6 +129,7 @@ def get_arguments():
     return args
 
 
+# Extract the CrossTask dataset structure from the original CrossTask repository 
 def extract_dataset(dataset, videos_features, videos_classes, frequencies, videos_per_class):
     for batch in dataset:
         for sample in batch:
@@ -140,6 +144,8 @@ def extract_dataset(dataset, videos_features, videos_classes, frequencies, video
             else: print("Duplicate detected!")
     return frequencies, videos_per_class, videos_features, videos_classes
 
+
+# Aggregates i3d features in time by averaging the seconds that fall in the same aggregation_window 
 def aggregate_features(videos_features, aggregation_window):
     rows = videos_features.shape[0]
     dim_features = videos_features.shape[1]
@@ -148,7 +154,9 @@ def aggregate_features(videos_features, aggregation_window):
     for i in range(0,rows):
         X[i,:] = np.mean(videos_features[max(0,i-aggregation_window):i+1,:], 0)
     return X
-    
+
+
+# Construct feature matrices for a specific data set
 def fill_data(videos, videos_features, videos_classes, n_rows, dim_features, classes_labels, temporal_aggregation=False, aggregation_window=0):
     
     # print(videos, videos_features, videos_classes, n_rows, dim_features, classes_labels)
@@ -179,6 +187,8 @@ def fill_data(videos, videos_features, videos_classes, n_rows, dim_features, cla
 
     return X,y
 
+
+# Compose CrossTask training, test, validation sets
 def compose_dataset(num_classes, train_ratio, test_ratio, valid_ratio, frequencies, videos_per_class, videos_features, videos_classes, temporal_aggregation=False, aggregation_window=0):
     train_videos, test_videos, valid_videos = [], [], []
     
@@ -199,7 +209,7 @@ def compose_dataset(num_classes, train_ratio, test_ratio, valid_ratio, frequenci
         valid_videos += videos[round(train_ratio*len(videos))+round(test_ratio*len(videos)):]
         
     print("Classes keys and labels", selected_keys, classes_labels)
-#    
+
     train_rows = sum([videos_features[v].shape[0] for v in train_videos])
     test_rows = sum([videos_features[v].shape[0] for v in test_videos])
     valid_rows = sum([videos_features[v].shape[0] for v in valid_videos])
@@ -211,6 +221,8 @@ def compose_dataset(num_classes, train_ratio, test_ratio, valid_ratio, frequenci
     return  X_train, y_train, X_test, y_test, X_valid, y_valid, train_rows, test_rows, valid_rows, classes_labels, \
         train_videos, test_videos, valid_videos
 
+
+# Same ad compose dataset but with predefined classes 
 def compose_dataset_with_specific_classes(classes, train_ratio, test_ratio, valid_ratio, videos_per_class, videos_features, videos_classes, temporal_aggregation=False, aggregation_window=10):
     
     num_classes = len(classes)
@@ -228,7 +240,7 @@ def compose_dataset_with_specific_classes(classes, train_ratio, test_ratio, vali
         valid_videos += videos[round(train_ratio*len(videos))+round(test_ratio*len(videos)):]
     
     print("Classes keys and labels", selected_keys, classes_labels)
-#    
+
     train_rows = sum([videos_features[v].shape[0] for v in train_videos])
     test_rows = sum([videos_features[v].shape[0] for v in test_videos])
     valid_rows = sum([videos_features[v].shape[0] for v in valid_videos])
@@ -241,11 +253,11 @@ def compose_dataset_with_specific_classes(classes, train_ratio, test_ratio, vali
         train_videos, test_videos, valid_videos
 
 
+# Loads info and data about CrossTask from the original CrossTask repository
 def initialize(dataset_size):
 
     # Assumes availability of CrossTask repository folder and assumes it's location.
     # Assumes all necessary parameters (e.g. folders path) are saved in args or received in command line.
-
 
     args = parse_args()
 
@@ -262,11 +274,12 @@ def initialize(dataset_size):
     
     return frequencies, videos_per_class, videos_features, videos_classes, all_tasks_info
 
+
+# Returns dictionary with keys=video_ids and values=true_class_id
 def get_videos_classes(features_path):
     videos_per_class = {}
     videos_classes = {}
     for file in [f for f in os.listdir(features_path) if ".npy" in f]:
-        # print(file)
         key = file.split("__")[0]
         video_url = file.split("__")[1].split(".npy")[0]
         if key not in videos_per_class: videos_per_class[key] = []
@@ -276,25 +289,25 @@ def get_videos_classes(features_path):
         else: print("Duplicate detected!")
     return videos_per_class, videos_classes    
 
+
+# Returns extracted i3d features for CrossTask videos contained in dataset_path
 def get_features(dataset_path, features_type):
     print("loading features...")
     if features_type != "sw" and features_type != "is": 
         print("Invalid feature type")
-        # exit("Failure")
         return 
     
     video_features = {}
     
     for file in [f for f in os.listdir(dataset_path) if ".npy" in f]:
-        # print(file)
         video_url = file.split("__")[1].split(".npy")[0]
-        # print(video_url)
-        # print(dataset_path+file)
         features = np.load(dataset_path+file, allow_pickle=True) #, encoding='bytes', allow_pickle=True).item()
         video_features[video_url] = features
         
     return video_features
 
+
+# Returns weights for each class calculated as #train_videos/#n_videos_per_class
 def get_classes_weights(classes_labels, videos_classes, train_videos, balance=False):
     weights = torch.ones([len(classes_labels)])
     if not balance:
@@ -305,11 +318,16 @@ def get_classes_weights(classes_labels, videos_classes, train_videos, balance=Fa
         # weights[i] = math.pow(len(train_videos)/n_videos,2)
     return weights.cuda() if torch.cuda.is_available() else weights
 
+
+# Load classes names to compose dataset with specific classes
+# Assumes presence of txt file in specific_classes_path
 def load_classes(specific_classes_path):
     with open(specific_classes_path+"classes.txt", "r") as file:
         classes = file.read().split(" ")
         return classes
 
+
+# Function to load data specified in filename (=path+filename) 
 def load_data(filename, with_torch = False):
     if os.path.exists(filename):
         with open(filename, 'rb') as f:
@@ -317,6 +335,8 @@ def load_data(filename, with_torch = False):
         return data
     else: print("File", filename, "does not exists.")
 
+
+# Function to save data to filename (=path+filename) 
 def save_data(data, filename, with_torch=False):
     with open(filename, "wb") as f:
         if with_torch == True: torch.save(data, f)
@@ -324,19 +344,14 @@ def save_data(data, filename, with_torch=False):
 
 
 # Model with fully connected layer for classification 
-
 class OneLayerNet(torch.nn.Module):
     def __init__(self, D_in, H, D_out):
         super(OneLayerNet, self).__init__()
         self.linear1 = torch.nn.Linear(D_in, H)
         self.softmax = torch.nn.Softmax(dim=1)
         self.logsoftmax = torch.nn.LogSoftmax(dim=1)
-        # self.linear2 = torch.nn.Linear(H, D_out) # one layer
         
     def forward(self, x):
-        # logits = torch.nn.functional.relu(self.linear1(x))#.clamp(min=0)
-        # predictions = self.softmax(logits)
-        
         logits = torch.tanh(self.linear1(x)) # changed to avoid exploding loss 
         predictions = self.logsoftmax(logits) # changed to match NNNLoss
         # predictions = logits #remove softmax to match cross entropy loss        
@@ -345,7 +360,6 @@ class OneLayerNet(torch.nn.Module):
 if __name__ == "__main__":
     
     # Load features extracted with pytorch i3d
-    
     torch.multiprocessing.set_sharing_strategy('file_system')
     
     args = get_arguments()
@@ -358,10 +372,9 @@ if __name__ == "__main__":
     temporal_aggregation = args.temporal_aggregation
     aggregation_window = args.aggregation_window
             
-
-            
-    frequencies, _, _, _, all_tasks_info = initialize("full")
     
+    #Load CrossTask dataset data and features
+    frequencies, _, _, _, all_tasks_info = initialize("full")
     
     videos_per_class, videos_classes = get_videos_classes(dataset_path)
     
@@ -375,6 +388,8 @@ if __name__ == "__main__":
     # root = "./torch/" #cluster
     root = "../data/"
     
+    
+    # Prepare dataset and output path
     if not specific_classes:
         X_train, y_train, X_test, y_test, X_valid, y_valid, train_rows, test_rows, valid_rows, \
             classes_labels, train_videos, test_videos, valid_videos = \
@@ -399,11 +414,13 @@ if __name__ == "__main__":
     print("Number of classes:", num_classes)
     
     
+    # Save constructed dataset
     save_data(classes_labels, output_path+"classes_labels.dat")
     save_data(train_videos, output_path+"train_videos.dat")
     save_data(valid_videos, output_path+"valid_videos.dat")
     save_data(test_videos, output_path+"test_videos.dat")
     
+    # Prepare for training
     train_data = NewDataset(X_train, y_train, num_classes)
     valid_data = NewDataset(X_valid, y_valid, num_classes)
     test_data = NewDataset(X_test, y_test, num_classes)
@@ -414,14 +431,14 @@ if __name__ == "__main__":
     
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle = True)
     
-    #%%
-    
     weights = get_classes_weights(classes_labels, videos_classes, train_videos, balance)
     print("Classes weights:", weights)
     
     training_accuracies, training_losses = {}, {}
     validation_accuracies, validation_losses = {}, {}
     
+    
+    # Train one model for each learning rate parameter
     # for lr in [1e-4, 1e-3, 1e-2, 1e-1]:
     for lr in [1e-4, 1e-3, 1e-2, 1e-1, 1, 10, 100]:
         
@@ -440,7 +457,6 @@ if __name__ == "__main__":
             device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
             model.to(device)
             
-            # criterion = torch.nn.CrossEntropyLoss(weights)
             criterion = torch.nn.NLLLoss(weights) # changed to NLLLoss from CrossEntropyLoss to match LogSoftmax!
             
             optimizer = torch.optim.SGD(model.parameters(), lr=lr)#1e-1)#, lr=1e-4)
@@ -469,9 +485,7 @@ if __name__ == "__main__":
                         # print(i)
                         # print(inputs, labels)
                         
-                        # labels = np.argmax(labels, axis = 1).reshape(labels.shape[0]).long() # added to match CrossEntropyLoss!
                         labels = torch.argmax(labels, axis = 1).reshape(labels.shape[0])
-            
                         
                         # zero the parameter gradients
                         optimizer.zero_grad()
@@ -479,10 +493,7 @@ if __name__ == "__main__":
                         # forward + backward + optimize
                         outputs = model(inputs)
                         
-                        # print("Outputs", outputs[:5])
-                        
                         loss = criterion(outputs, labels)
-                        
                         # print("Loss", loss)
                         
                         try:
@@ -491,9 +502,6 @@ if __name__ == "__main__":
                         except RuntimeError as e:
                             print(e, "Exception occurred, stopping training.")
                             break
-                    
-                        # loss.backward()
-                        # optimizer.step()
                         
                         # print(loss)
                 
@@ -511,16 +519,12 @@ if __name__ == "__main__":
                 
                 # Validation accuracies and losses 
                 
-                
-                # outputs = model(torch.autograd.Variable(torch.from_numpy(valid_data.X)))
                 inputs = torch.autograd.Variable(torch.from_numpy(valid_data.X)).cuda() \
                     if torch.cuda.is_available() else torch.autograd.Variable(torch.from_numpy(valid_data.X))
                 outputs = model(inputs)
                 
-                # labels = torch.autograd.Variable(torch.from_numpy(np.argmax(valid_data.y, axis = 1).reshape(valid_data.y.shape[0]))).long()
-                labels = torch.autograd.Variable(torch.from_numpy(np.argmax(valid_data.y, axis = 1).reshape(valid_data.y.shape[0]))).long().cuda()
-
-                if torch.cuda.is_available() else torch.autograd.Variable(torch.from_numpy(np.argmax(valid_data.y, axis = 1).reshape(valid_data.y.shape[0]))).long()
+                labels = torch.autograd.Variable(torch.from_numpy(np.argmax(valid_data.y, axis = 1).reshape(valid_data.y.shape[0]))).long().cuda() \
+                    if torch.cuda.is_available() else torch.autograd.Variable(torch.from_numpy(np.argmax(valid_data.y, axis = 1).reshape(valid_data.y.shape[0]))).long()
         
                 validation_loss = criterion(outputs, labels)
                 _, predictions = torch.max(outputs.data, 1)
