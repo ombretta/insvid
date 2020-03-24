@@ -60,7 +60,7 @@ def get_arguments():
     parser.add_argument(
         '--dataset_path',
         type=str,
-        default="../pytorch_model/features/sw/",
+        default="../../pytorch_model/features/sw/",
         help='Path to the features folder')
     parser.add_argument(
         '--features_type',
@@ -377,7 +377,7 @@ if __name__ == "__main__":
     valid_ratio = 0.1 # at least 3 videos per class
     
     # root = "./torch/" #cluster
-    root = "./aggregated_features/"
+    root = "../data/"
     
     if not specific_classes:
         X_train, y_train, X_test, y_test, X_valid, y_valid, train_rows, test_rows, valid_rows, \

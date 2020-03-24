@@ -74,7 +74,7 @@ def load_cross_task_dataset(args):
         drop_last = True,
         collate_fn = lambda batch: batch,
         )
-    testset = CrossTaskDataset(test_vids, n_steps, adjust_folder_path(args.features_path), adjust_folder_path(args.constraints_path))
+    testset = CrossTaskDataset(test_vids, n_steps, '../../../CrossTask/crosstask_features', '../../../CrossTask/crosstask_constraints')
     testloader = DataLoader(testset, 
         batch_size = args.batch_size, 
         num_workers = args.num_workers, 
@@ -154,7 +154,7 @@ def main():
     
     train_vids, test_vids = random_split(task_vids, test_tasks, args.n_train)
     
-    trainset = CrossTaskDataset(train_vids, n_steps, adjust_folder_path(args.features_path), adjust_folder_path(args.constraints_path))
+    trainset = CrossTaskDataset(train_vids, n_steps, adjust_folder_path('../../../CrossTask/crosstask_features'), adjust_folder_path(args.constraints_path))
     # DataLoader: :class:`~torch.utils.data.DataLoader`
     trainloader = DataLoader(trainset, 
         batch_size = args.batch_size, 
@@ -163,7 +163,7 @@ def main():
         drop_last = True,
         collate_fn = lambda batch: batch,
         )
-    testset = CrossTaskDataset(test_vids, n_steps, adjust_folder_path(args.features_path), adjust_folder_path(args.constraints_path))
+    testset = CrossTaskDataset(test_vids, n_steps, adjust_folder_path('../../../CrossTask/crosstask_features'), adjust_folder_path(args.constraints_path))
     testloader = DataLoader(testset, 
         batch_size = args.batch_size, 
         num_workers = args.num_workers, 
