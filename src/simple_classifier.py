@@ -242,6 +242,11 @@ def compose_dataset_with_specific_classes(classes, train_ratio, test_ratio, vali
 
 
 def initialize(dataset_size):
+
+    # Assumes availability of CrossTask repository folder and assumes it's location.
+    # Assumes all necessary parameters (e.g. folders path) are saved in args or received in command line.
+
+
     args = parse_args()
 
     [trainloader, testloader, A, M, all_tasks_info] = CrossTaskdataset.load_cross_task_dataset(args)
@@ -327,11 +332,6 @@ class OneLayerNet(torch.nn.Module):
         self.softmax = torch.nn.Softmax(dim=1)
         self.logsoftmax = torch.nn.LogSoftmax(dim=1)
         # self.linear2 = torch.nn.Linear(H, D_out) # one layer
-
-    # def forward(self, x):
-    #     h_relu = self.linear1(x).clamp(min=0)
-    #     y_pred = self.linear2(h_relu)
-    #     return y_pred
         
     def forward(self, x):
         # logits = torch.nn.functional.relu(self.linear1(x))#.clamp(min=0)
@@ -358,14 +358,10 @@ if __name__ == "__main__":
     temporal_aggregation = args.temporal_aggregation
     aggregation_window = args.aggregation_window
             
-    
 
-    
-    #%%
             
     frequencies, _, _, _, all_tasks_info = initialize("full")
     
-    #%%
     
     videos_per_class, videos_classes = get_videos_classes(dataset_path)
     
@@ -467,9 +463,6 @@ if __name__ == "__main__":
             
                     with torch.autograd.detect_anomaly():
 
-                        # inputs = batch[1]['X']
-                        # labels = batch[1]['y']
-                        
                         inputs = batch[1]['X'].cuda() if torch.cuda.is_available() else batch[1]['X']
                         labels = batch[1]['y'].cuda() if torch.cuda.is_available() else batch[1]['y']
                     
@@ -525,8 +518,9 @@ if __name__ == "__main__":
                 outputs = model(inputs)
                 
                 # labels = torch.autograd.Variable(torch.from_numpy(np.argmax(valid_data.y, axis = 1).reshape(valid_data.y.shape[0]))).long()
-                labels = torch.autograd.Variable(torch.from_numpy(np.argmax(valid_data.y, axis = 1).reshape(valid_data.y.shape[0]))).long().cuda() \
-                    if torch.cuda.is_available() else torch.autograd.Variable(torch.from_numpy(np.argmax(valid_data.y, axis = 1).reshape(valid_data.y.shape[0]))).long()
+                labels = torch.autograd.Variable(torch.from_numpy(np.argmax(valid_data.y, axis = 1).reshape(valid_data.y.shape[0]))).long().cuda()
+
+                if torch.cuda.is_available() else torch.autograd.Variable(torch.from_numpy(np.argmax(valid_data.y, axis = 1).reshape(valid_data.y.shape[0]))).long()
         
                 validation_loss = criterion(outputs, labels)
                 _, predictions = torch.max(outputs.data, 1)
