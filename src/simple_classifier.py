@@ -52,7 +52,7 @@ class NewDataset(torch.utils.data.Dataset):
         return self.data[idx]
 
 
-#cCommand line arguments definition
+#Command line arguments definition
 def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
