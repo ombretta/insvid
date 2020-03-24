@@ -1,4 +1,10 @@
-Requirements: 
+Software:
 - Python 3.6.0
 - torch 1.4.0
-- CrossTask (https://github.com/DmZhukov/CrossTask) 
+- CrossTask repository (https://github.com/DmZhukov/CrossTask) 
+
+Data:
+- Folder ../pytorch_model/features⁩/sw/ containing i3d features per video in a .npy file.
+- i3d features can be extracted from https://github.com/eric-xw/kinetics-i3d-pytorch
+
+
