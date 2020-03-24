@@ -1,0 +1,4 @@
+Requirements: 
+- Python 3.6.0
+- torch 1.4.0
+- CrossTask (https://github.com/DmZhukov/CrossTask) 

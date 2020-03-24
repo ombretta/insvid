@@ -10,12 +10,6 @@ This repository contains the code to train the model on the CrossTask dataset (Z
 
 The i3d features are not contained in the repository and you need to precompute them first. 
 
-Requirements: 
-- Python 3.6.0
-- torch 1.4.0
-- CrossTask (https://github.com/DmZhukov/CrossTask) 
-
-
 ### Source code
 You can find the code to train the model under ./src/.
 Run python simple_classifier.py to load the CrossTask dataset and train the fully connected layer. 
